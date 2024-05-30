@@ -184,7 +184,6 @@ class GridExample(Scene):
 
 # a sprite containing an image, position vector, dot, etc .... 
 class Sprite(Group):
-
     def __init__(self,
             image_dir="images/",
             image_file="Mario-Sprite.png",
@@ -199,6 +198,7 @@ class Sprite(Group):
             image_height=2,
             **kwargs):
         super().__init__(**kwargs)
+        self.position_history=[]
         self.image_dir=image_dir
         self.image_file=image_file
         self.filename = self.image_dir + self.image_file
@@ -217,7 +217,8 @@ class Sprite(Group):
         self.originPoint = [op[0], op[1]]
         
         self.position_vector = Arrow(start=self.originPoint, end=pc)
-        
+        self.position_history.append(self.position)  # first position
+        print(self.position_history)
         self.image_height = image_height
         
         self.sprite = ImageMobject(self.filename,height=self.image_height) 
@@ -236,7 +237,7 @@ class Sprite(Group):
         
         # set positions 
         self.pcoord  = self.coordsys.axes.coords_to_point(self.position[0],self.position[1])
- 
+        
         #move everything
         self.sprite.move_to(self.pcoord)
         self.dot.move_to(self.pcoord)
@@ -249,15 +250,36 @@ class Sprite(Group):
         if self.square_show : 
             self.add(self.outline)
             
+        #self.update_history()
+            
+    def update_history(self):
+        prev = self.position_history[-1] # last in list so far 
+        self.position_history.append(self.position)
+        
+        pc = self.coordsys.axes.coords_to_point(self.position[0],self.position[1])
+        ppc = self.coordsys.axes.coords_to_point(prev[0],prev[1])
+        
+        d=(Dot(point=pc, radius=self.dot_radius/2,color=RED, opacity=0.1))
+        l = Line(start=ppc, end=pc)
+
+        return [ShowCreation(l),ShowCreation(d)]
         
         
     def ShowCreation(self):
         Animations=[]
+        
+        
         self.pcoord  = self.coordsys.axes.coords_to_point(self.position[0],self.position[1])
         pc = [self.pcoord[0], self.pcoord[1]]
+        self.position_vector.target = Arrow(start=self.originPoint, end=pc)
         
         Animations.append(ShowCreation(self))
-        Animations.append(GrowArrow(self.position_vector))
+        Animations.append(MoveToTarget(self.position_vector))
+        hanims = self.update_history()
+        for a in hanims:
+            Animations.append(a)
+        
+        print(self.position_history)
 
         return Animations
     
@@ -280,6 +302,10 @@ class Sprite(Group):
             Animations.append(MoveToTarget(self.outline))
             
         Animations.append(MoveToTarget(self.position_vector))
+        
+        hanims = self.update_history()
+        for a in hanims:
+            Animations.append(a)
         
         return Animations
         
@@ -361,10 +387,18 @@ class testing(Scene):
         self.play(*sp.Move(np.array([-2,0,0])))
         self.wait()
         
+        self.play(*sp.Move(np.array([-2,2,0])))
+        self.wait()
+        
                
         self.play(*sp2.ShowCreation())
-        self.play(*sp2.Move(np.array([8,0,0])))
+        self.play(*sp2.Move(np.array([8,4,0])))
         self.wait()
+        self.play(*sp2.Move(np.array([7,4,0])))
+        self.wait()
+        self.play(*sp2.Move(np.array([6,4,0])))
+        self.wait()
+
         
 
 class CoordinateSystemExample(Scene):
