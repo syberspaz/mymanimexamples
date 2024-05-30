@@ -180,48 +180,9 @@ class GridExample(Scene):
         #self.play(vt.animate.set_value(10),vt2, run_time=2, rate_func=linear)
         #vt.add_updater(lambda mobject: mobject.set_value(vt.get_value()-1))
         #self.wait(0.5)
-      
-        
         self.wait()
-       
-       
-       
-# Define vectors using numpy arrays
-#         vec_a = np.array([2, 3, 0])  # Adding a third dimension (z) which Manim expects
-#         vec_b = np.array([1, -2, 0])
 
-#         # Create vectors for display
-#         vector_1 = Vector(vec_a, color=BLUE)
-#         vector_2 = Vector(vec_b, color=YELLOW)
-#         vector_2.shift(vector_1.get_end())  # Positioning vector_2 at the end of vector_1
-
-#         # Calculate resultant vector using numpy
-#         vec_r = vec_a + vec_b
-#         resultant_vector = Vector(vec_r, color=RED)
-
-#         # Create squares centered on each vector
-#         square_r = Square(side_length=1.0, color=RED).move_to(resultant_vector.get_start())
-#         square_re = Square(side_length=1.0, color=RED).move_to(resultant_vector.get_end())
-        
-#         self.play(Create(square_r))
-
-#         # Adding vectors and labels to the scene
-#         self.play(GrowArrow(vector_1))
-#         self.wait(1)
-
-#         self.play(GrowArrow(vector_2))
-        
-#         self.wait(1)
-
-#         # Animate the addition of vectors
-#         self.play(GrowArrow(resultant_vector))
-#         self.play(Transform(square_r,square_re ))
-        
-#         self.wait(2)
-
-
-
-
+# a sprite containing an image, position vector, dot, etc .... 
 class Sprite(Group):
 
     def __init__(self,
@@ -229,7 +190,7 @@ class Sprite(Group):
             image_file="Mario-Sprite.png",
             position = np.array([0,0,0]),
             dot_radius=0.25,
-            dot_color=RED,
+            dot_color=GREEN,
             dot_point=LEFT,
             square_color=RED,
             square_show=False,
@@ -249,17 +210,18 @@ class Sprite(Group):
         self.square_color = square_color
         self.square_show = square_show
         self.coordsys = coordsys
+       
         self.pcoord  = self.coordsys.axes.coords_to_point(self.position[0],self.position[1])
         pc = [self.pcoord[0], self.pcoord[1]]
         op = self.coordsys.axes.coords_to_point(0,0)
         self.originPoint = [op[0], op[1]]
-        print("origin:",self.originPoint)
+        
         self.position_vector = Arrow(start=self.originPoint, end=pc)
         
         self.image_height = image_height
         
         self.sprite = ImageMobject(self.filename,height=self.image_height) 
-        self.dot = Dot(point=LEFT, radius=self.dot_radius,color=self.dot_color)
+        self.dot = Dot(point=LEFT, radius=self.dot_radius,color=RED)
         self.outline = Square(side_length=self.sprite.height, color=self.square_color)
         
         self.setup()
@@ -273,16 +235,13 @@ class Sprite(Group):
         self.add(self.position_vector)
         
         # set positions 
-        self.position = np.array([0,0,0])
         self.pcoord  = self.coordsys.axes.coords_to_point(self.position[0],self.position[1])
-        
-        print("self.position:",self.position)
-        print("self.pcoord:",self.pcoord)
  
+        #move everything
+        self.sprite.move_to(self.pcoord)
         self.dot.move_to(self.pcoord)
         self.outline.move_to(self.pcoord)
-        self.sprite.move_to(self.pcoord)
-        
+       
         # add visible to group
         self.add(self.sprite)
         if self.dot_show : 
@@ -292,14 +251,13 @@ class Sprite(Group):
             
         
         
-    def play(self):
+    def ShowCreation(self):
         Animations=[]
         self.pcoord  = self.coordsys.axes.coords_to_point(self.position[0],self.position[1])
         pc = [self.pcoord[0], self.pcoord[1]]
         
         Animations.append(ShowCreation(self))
         Animations.append(GrowArrow(self.position_vector))
-#        Animations.append(ApplyMethod(self.position_vector.shift,self.pcoord))
 
         return Animations
     
@@ -326,28 +284,18 @@ class Sprite(Group):
         return Animations
         
     
+# a simple coordinate system class
 class CoordSystem2D(VGroup):
-        # stroke_color=GREY_A
-        # stroke_width=2
-        # numbers_to_exclude=[0]
-        # font_size = 20
-        # num_decimal_places=1
-        # big_tick_numbers=[-2,2]
-        # width=10
-        # height=10
-        # x_range =(-1, 1,0.5) 
-        # y_range=(-1, 1, 0.5)
-        # axes=[]
-
         def __init__(self,
-                x_range = (-1, 6,0.5), y_range=(-1, 6, 0.5), 
-                width=12, height=6,
+                x_range = (-2, 10,1), y_range=(-1, 6, 1), 
+                width=10, height=6,
                 stroke_width=2, 
                 stroke_color=GREY_A, 
                 numbers_to_exclude=[0],
                 font_size=12, 
                 num_decimal_places=1,
                 big_tick_numbers=[-2, 2],
+                show_grid=True,
                 **kwargs):
             super().__init__(**kwargs)
             # setup values to passed in vars/defaults
@@ -361,23 +309,28 @@ class CoordSystem2D(VGroup):
             self.big_tick_numbers = big_tick_numbers
             self.x_range = x_range
             self.y_range = y_range
-            
+            self.show_grid = show_grid
             # setup axes mobject with these defaults
             self.setup()
             
         # call this to create the axes with set values
         def setup(self):
+            grid = NumberPlane(
+                background_line_style = {"stroke_color":GREY_B, "stroke_width":4, "stroke_opacity":0.1},
+                axis_config = {"stroke_color":GREY_B, "stroke_width":4, "stroke_opacity":0.1}
+                )
             self.axes = Axes(
                     x_range=self.x_range,
                     # y-axis ranges from -2 to 2 with a step size of 0.5
                     y_range=self.y_range,
                     # The axes will be stretched so as to match the specified
                     # height and width
-                    #height=self.height,
-                    #width=self.width,
+                    height=self.height,
+                    width=self.width,
                     axis_config=dict(
                         stroke_color=self.stroke_color,
                         stroke_width=self.stroke_width,
+                        stroke_opacity=0.5,
                         numbers_to_exclude=self.numbers_to_exclude,
                     ),
             )
@@ -385,14 +338,13 @@ class CoordSystem2D(VGroup):
                 font_size=self.font_size,
                 num_decimal_places=self.num_decimal_places,
             )
+            if self.show_grid:
+                self.add(grid)
             self.add(self.axes)
 
         # reset is used to start over
         def reset(self):
             self.remove(self.axes)
-        
-            
-        # demo that you can reset, set values, and then setup and it creates things properly
         
         
         
@@ -401,22 +353,17 @@ class testing(Scene):
         self.wait()
         c = CoordSystem2D()
         sp = Sprite(coordsys=c)
+        sp2 = Sprite(coordsys=c, position=np.array([8,5,0]))
         
         self.play(ShowCreation(c))
-        self.play(*sp.play())
+        
+        self.play(*sp.ShowCreation())
         self.play(*sp.Move(np.array([-2,0,0])))
         self.wait()
         
-        self.play(*sp.Move(np.array([-2,5,0])))
-        self.wait()
-        
-        self.play(*sp.Move(np.array([2,5,0])))
-        self.wait()
-        
-        self.play(*sp.Move(np.array([2,0,0])))
-        self.wait()
-
-        self.play(*sp.Move(np.array([0,0,0])))
+               
+        self.play(*sp2.ShowCreation())
+        self.play(*sp2.Move(np.array([8,0,0])))
         self.wait()
         
 
@@ -437,34 +384,6 @@ class CoordinateSystemExample(Scene):
             Tex(R"\vec{p}", **kw),
         )
         lines.arrange(DOWN, buff=LARGE_BUFF)
-
-        #self.add(lines[0])
-        # The animation TransformMatchingStrings will line up parts
-        # of the source and target which have matching substring strings.
-        # Here, giving it a little path_arc makes each part rotate into
-        # their final positions, which feels appropriate for the idea of
-        # rearranging an equation
-        # self.play(
-        #     TransformMatchingStrings(
-        #         lines[0].copy(), lines[1],
-        #         # matched_keys specifies which substring should
-        #         # line up. If it's not specified, the animation
-        #         # will align the longest matching substrings.
-        #         # In this case, the substring "^2 = C^2" would
-        #         # trip it up
-        #         matched_keys=["A^2", "B^2", "C^2"],
-        #         # When you want a substring from the source
-        #         # to go to a non-equal substring from the target,
-        #         # use the key map.
-        #         key_map={"+": "-"},
-        #         path_arc=90 * DEGREES,
-        #     ),
-        # )
-        # self.wait()
-        # self.play(TransformMatchingStrings(
-        #     lines[1].copy(), lines[2],
-        #     matched_keys=["A^2"]
-        # ))
 
         axes = Axes(
             # x-axis ranges from -1 to 10, with a default step size of 1
@@ -521,89 +440,11 @@ class CoordinateSystemExample(Scene):
         v_line = always_redraw(lambda: axes.get_v_line(dot.get_bottom()))
         h_line_label = lines[0].move_to(h_line.get_center())
         v_line_label = lines[1].move_to(v_line.get_center())
-        self.play(
-             ShowCreation(h_line),
-         )
-        self.play(
-             FadeIn(h_line_label)
-         )
+        self.play(ShowCreation(h_line))
+        self.play(FadeIn(h_line_label))
         self.wait()
-        self.play(
-             ShowCreation(v_line),
-         )
-        self.play(
-             FadeIn(v_line_label)
-         )
+        self.play(ShowCreation(v_line))
+        self.play(FadeIn(v_line_label))
          
-        # self.play(dot.animate.move_to(axes.c2p(3, -2)))
-        # self.wait()
-        # self.play(dot.animate.move_to(axes.c2p(1, 1)))
-        # self.wait()
-
-        # If we tie the dot to a particular set of coordinates, notice
-        # that as we move the axes around it respects the coordinate
-        # system defined by them.
-        # f_always(dot.move_to, lambda: axes.c2p(1, 1))
-        # self.play(
-        #     axes.animate.scale(0.75).to_corner(UL),
-        #     run_time=2,
-        # )
-        # self.wait()
-        # self.play(FadeOut(VGroup(axes, dot, h_line, v_line)))
-
-        # Other coordinate systems you can play around with include
-        # ThreeDAxes, NumberPlane, and ComplexPlane.
-
-# class VectorAddition(Scene):
-
-    
-#     def construct(self):
-#         # Define vectors using numpy arrays
-#         vec_a = np.array([2, 3, 0])  # Adding a third dimension (z) which Manim expects
-#         vec_b = np.array([1, -2, 0])
-
-#         # Create vectors for display
-#         vector_1 = Vector(vec_a, color=BLUE)
-#         vector_2 = Vector(vec_b, color=YELLOW)
-#         vector_2.shift(vector_1.get_end())  # Positioning vector_2 at the end of vector_1
-
-#         # Calculate resultant vector using numpy
-#         vec_r = vec_a + vec_b
-#         resultant_vector = Vector(vec_r, color=RED)
-
-#         # Create squares centered on each vector
-#         square_r = Square(side_length=1.0, color=RED).move_to(resultant_vector.get_start())
-#         square_re = Square(side_length=1.0, color=RED).move_to(resultant_vector.get_end())
-        
-#         self.play(Create(square_r))
-
-#         # Adding vectors and labels to the scene
-#         self.play(GrowArrow(vector_1))
-#         self.wait(1)
-
-#         self.play(GrowArrow(vector_2))
-        
-#         self.wait(1)
-
-#         # Animate the addition of vectors
-#         self.play(GrowArrow(resultant_vector))
-#         self.play(Transform(square_r,square_re ))
-        
-#         self.wait(2)
-
-
-# class GameSprite(Scene):
-
-#     def construct(self):
-#         mario = ImageMobject("images/Mario-Sprite.png")
-#         vec_a = np.array([0, 0, 0])
-#         dot1 = Dot(point=LEFT, radius=0.25,color=GREEN).move_to(vec_a)
-#         square_m = Square(side_length=mario.height, color=RED).move_to(vec_a)
-        
-#         self.add(mario)
-#         self.play(Create(square_m))
-#         self.play(FadeIn(dot1))
         
 
-#         self.wait(2)
- 
